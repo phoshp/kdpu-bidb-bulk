@@ -18,45 +18,24 @@ $WingetApps = [ordered]@{
 
 $ManualPrograms = @(
     @{
-        Ad          = "DPÜ Alpemix (Uzaktan Erişim)"
-        Url         = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
-        Dosya       = "DUMLUPINARUNICMX.exe"
-        Standalone  = $true
-    },
+        Ad     = "ACS Unified Reader"
+        Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AcsReader/64bit/Hepsi/ACS-Unified-MSI-Win-4290(ACS38T-WindowsAll).zip"
+        Dosya  = "ACSReader.zip"
+    }
     @{
         Ad     = "AkisKart Sürücüsü"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
         Dosya  = "AkisKart.zip"
     },
     @{
-        Ad     = "ACS Unified Reader"
-        Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AcsReader/64bit/Hepsi/ACS-Unified-MSI-Win-4290(ACS38T-WindowsAll).zip"
-        Dosya  = "ACSReader.zip"
-    }
+        Ad          = "DPÜ Alpemix (Uzaktan Erişim)"
+        Url         = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
+        Dosya       = "DUMLUPINARUNICMX.exe"
+        Standalone  = $true
+    },
 )
 
 $DownloadFolder = "$env:TEMP\KDPU_BIDB_BULK"
-
-function Test-Admin {
-    $currentUser = [Security.Principal.WindowsPrincipal]([Security.Principal.WindowsIdentity]::GetCurrent())
-    return $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-}
-
-function Ensure-Admin {
-    if (-not (Test-Admin)) {
-        Write-Host "Bu araç yönetici izni gerektiriyor. Yeniden başlatılıyor..." -ForegroundColor Yellow
-        $psi = New-Object System.Diagnostics.ProcessStartInfo
-        $psi.FileName = "powershell.exe"
-        $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-        $psi.Verb = "runas"
-        try {
-            [System.Diagnostics.Process]::Start($psi) | Out-Null
-        } catch {
-            Write-Host "Yönetici izni alınamadı. Program kapatılıyor." -ForegroundColor Red
-        }
-        exit
-    }
-}
 
 function Test-WingetAvailable {
     if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
@@ -160,8 +139,7 @@ function Install-ManualPrograms {
         } else {
             Write-Host ">> $($program.Ad) kurulumu başlatılıyor..." -ForegroundColor Green
             Start-Sleep -Seconds 1
-            Start-Process -FilePath $installerPath
-            Read-Host "   Kurulum bittiğinde devam etmek için ENTER'a basın"
+            Start-Process -FilePath $installerPath -Wait
         } 
     }
 }
@@ -245,12 +223,12 @@ function Invoke-AllActions {
 
 function Show-Menu {
     Clear-Host
-    Write-Host "KDPÜ BİDB Windows Format Aracı" -ForegroundColor Yellow
+    Write-Host "KDPÜ BİDB Windows Bulk Aracı" -ForegroundColor Yellow
     Write-Host "--------------------------------"
-    Write-Host "1.) Hepsini uygula."
-    Write-Host "2.) Programları kur."
-    Write-Host "3.) İnce Ayar yap."
-    Write-Host "4.) Windows Aktifleştir."
+    Write-Host "1.) Hepsini uygula"
+    Write-Host "2.) Programları kur"
+    Write-Host "3.) İnce Ayar yap"
+    Write-Host "4.) Windows Aktifleştir"
     Write-Host "0.) Çıkış"
     Write-Host ""
 }
@@ -261,7 +239,11 @@ function Post-Action {
 }
 
 function Start-Toolkit {
-    Ensure-Admin
+    $currentUser = [Security.Principal.WindowsPrincipal]([Security.Principal.WindowsIdentity]::GetCurrent())
+    if (-not $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Host "HATA: Programı yönetici olarak çalıştırın." -ForegroundColor Red
+        exit
+    }
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
     do {
