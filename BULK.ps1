@@ -9,8 +9,6 @@
 #  AYARLAR
 # ----------
 
-$WindowsProductKey = "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-
 $WingetApps = [ordered]@{
     "Google.Chrome"                       = "Google Chrome"
     "RARLab.WinRAR"                       = "WinRAR"
@@ -156,15 +154,21 @@ function Invoke-Tweaks {
 function Invoke-WinActivation {
     Write-Host "`n===== WINDOWS AKTİFLEŞTİR =====" -ForegroundColor Magenta
 
-    if ($WindowsProductKey -eq "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX") {
-        Write-Host "HATA: Lisans anahtarı henüz ayarlanmamış." -ForegroundColor Red
-        Write-Host "Script içindeki `$WindowsProductKey` değişkenine geçerli anahtarınızı girin." -ForegroundColor Yellow
+    $productKey = (Read-Host "Windows ürün anahtarını girin (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX)").Trim().ToUpperInvariant()
+
+    if ([string]::IsNullOrWhiteSpace($productKey)) {
+        Write-Host "Aktivasyon iptal edildi: Ürün anahtarı girilmedi." -ForegroundColor Yellow
+        return
+    }
+
+    if ($productKey -notmatch '^[A-Z0-9]{5}(-[A-Z0-9]{5}){4}$') {
+        Write-Host "HATA: Ürün anahtarı XXXXX-XXXXX-XXXXX-XXXXX-XXXXX biçiminde olmalıdır." -ForegroundColor Red
         return
     }
 
     Write-Host "Lisans anahtarı giriliyor..." -ForegroundColor Cyan
     try {
-        cscript.exe //Nologo "$env:windir\System32\slmgr.vbs" /ipk $WindowsProductKey
+        cscript.exe //Nologo "$env:windir\System32\slmgr.vbs" /ipk $productKey
     } catch {
         Write-Host "HATA: Anahtar girilemedi: $_" -ForegroundColor Red
         return
