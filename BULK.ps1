@@ -62,17 +62,72 @@ function Ensure-Admin {
 }
 
 function Test-WingetAvailable {
-    $winget = Get-Command winget -ErrorAction SilentlyContinue
-    if (-not $winget) {
-        Write-Host "HATA: winget bulunamadı. App Installer güncel değil veya kurulu değil." -ForegroundColor Red
-        Write-Host "Microsoft Store üzerinden 'App Installer' güncellemesi yapıp tekrar deneyin." -ForegroundColor Yellow
+    if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
+        return $true
+    }
+
+    $windowsAppsPath = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
+    $wingetAlias = Join-Path $windowsAppsPath "winget.exe"
+    if (Test-Path $wingetAlias) {
+        if (($env:Path -split ";") -notcontains $windowsAppsPath) {
+            $env:Path = "$env:Path;$windowsAppsPath"
+        }
+        return $true
+    }
+
+    return $false
+}
+
+function Install-Winget {
+    if ([Environment]::OSVersion.Version.Build -lt 17763) {
+        Write-Host "HATA: winget için Windows 10 sürüm 1809 veya daha yenisi gerekiyor." -ForegroundColor Red
         return $false
     }
-    return $true
+
+    Write-Host "winget bulunamadı. Windows Package Manager kuruluyor..." -ForegroundColor Yellow
+    $originalRepositoryPolicy = $null
+
+    try {
+        [Net.ServicePointManager]::SecurityProtocol =
+            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+        $repository = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
+        if (-not $repository) {
+            Register-PSRepository -Default -ErrorAction Stop
+            $repository = Get-PSRepository -Name PSGallery -ErrorAction Stop
+        }
+
+        $originalRepositoryPolicy = $repository.InstallationPolicy
+        if ($originalRepositoryPolicy -ne "Trusted") {
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction Stop
+        }
+
+        Install-PackageProvider -Name NuGet -Force -ForceBootstrap -ErrorAction Stop | Out-Null
+        Install-Module -Name Microsoft.WinGet.Client -Repository PSGallery -Scope AllUsers -Force -AllowClobber -ErrorAction Stop
+        Import-Module Microsoft.WinGet.Client -Force -ErrorAction Stop
+        Repair-WinGetPackageManager -AllUsers -Latest -Force -ErrorAction Stop | Out-Null
+    } catch {
+        Write-Host "HATA: winget kurulamadı: $_" -ForegroundColor Red
+    } finally {
+        if ($originalRepositoryPolicy -and $originalRepositoryPolicy -ne "Trusted") {
+            Set-PSRepository -Name PSGallery -InstallationPolicy $originalRepositoryPolicy -ErrorAction SilentlyContinue
+        }
+    }
+
+    if (Test-WingetAvailable) {
+        Write-Host "winget başarıyla kuruldu." -ForegroundColor Green
+        return $true
+    }
+
+    Write-Host "HATA: winget kurulumdan sonra bulunamadı." -ForegroundColor Red
+    Write-Host "Microsoft Store üzerinden 'App Installer' kurup veya güncelleyip tekrar deneyin." -ForegroundColor Yellow
+    return $false
 }
 
 function Install-WingetApps {
-    if (-not (Test-WingetAvailable)) { return }
+    if (-not (Test-WingetAvailable)) {
+        if (-not (Install-Winget)) { return }
+    }
 
     foreach ($id in $WingetApps.Keys) {
         $name = $WingetApps[$id]
@@ -92,6 +147,43 @@ function Install-WingetApps {
     }
 }
 
+function Save-RemoteFile {
+    param(
+        [string]$Url,
+        [string]$Destination
+    )
+
+    $partialPath = "$Destination.download"
+    $originalProgressPreference = $ProgressPreference
+    $ProgressPreference = "SilentlyContinue"
+    [Net.ServicePointManager]::SecurityProtocol =
+        [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+    try {
+        Remove-Item -Path $partialPath -Force -ErrorAction SilentlyContinue
+
+        if (Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue) {
+            try {
+                Start-BitsTransfer -Source $Url -Destination $partialPath -Priority Foreground -RetryTimeout 0 -ErrorAction Stop
+            } catch {
+                Write-Host "   BITS kullanılamadı, standart indirme yöntemi deneniyor..." -ForegroundColor Yellow
+                Invoke-WebRequest -Uri $Url -OutFile $partialPath -UseBasicParsing -TimeoutSec 900 -ErrorAction Stop
+            }
+        } else {
+            Invoke-WebRequest -Uri $Url -OutFile $partialPath -UseBasicParsing -TimeoutSec 900 -ErrorAction Stop
+        }
+
+        if (-not (Test-Path $partialPath) -or (Get-Item $partialPath).Length -eq 0) {
+            throw "İndirilen dosya boş veya bulunamadı."
+        }
+
+        Move-Item -Path $partialPath -Destination $Destination -Force
+    } finally {
+        $ProgressPreference = $originalProgressPreference
+        Remove-Item -Path $partialPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Install-ManualPrograms {
     if (-not (Test-Path $DownloadFolder)) {
         New-Item -ItemType Directory -Path $DownloadFolder | Out-Null
@@ -102,7 +194,7 @@ function Install-ManualPrograms {
 
         Write-Host "`n>> $($program.Ad) indiriliyor..." -ForegroundColor Cyan
         try {
-            Invoke-WebRequest -Uri $program.Url -OutFile $downloadPath -UseBasicParsing
+            Save-RemoteFile -Url $program.Url -Destination $downloadPath
         } catch {
             Write-Host "HATA: $($program.Ad) indirilemedi: $_" -ForegroundColor Red
             continue
