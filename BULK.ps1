@@ -111,7 +111,7 @@ function Install-ManualPrograms {
         }
 
         $installerPath = $downloadPath
-        if ([System.IO.Path]::GetExtension($installerPath) -in ".zip", ".rar", ".7z", ".tar", ".gz") {
+        if ([System.IO.Path]::GetExtension($installerPath) -eq ".zip") {
             $extractPath = Join-Path $DownloadFolder ([System.IO.Path]::GetFileNameWithoutExtension($program.Dosya))
             Write-Host ">> $($program.Ad) arşivden çıkarılıyor..." -ForegroundColor Cyan
             try {
@@ -242,7 +242,7 @@ function Start-Toolkit {
     $currentUser = [Security.Principal.WindowsPrincipal]([Security.Principal.WindowsIdentity]::GetCurrent())
     if (-not $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         Write-Host "HATA: Programı yönetici olarak çalıştırın." -ForegroundColor Red
-        exit
+        return
     }
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
