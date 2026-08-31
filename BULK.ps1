@@ -18,10 +18,11 @@ $WingetApps = [ordered]@{
 
 $ManualPrograms = @(
     @{
-        Ad     = "Dumlupınar Üniversitesi CMX"
-        Url    = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
-        Dosya  = "DUMLUPINARUNICMX.exe"
-        Arsiv  = $false
+        Ad          = "Dumlupınar Üniversitesi CMX"
+        Url         = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
+        Dosya       = "DUMLUPINARUNICMX.exe"
+        Arsiv       = $false
+        KurulumTipi = "NoInstaller"
     },
     @{
         Ad     = "AkisKart Sürücüsü"
@@ -128,13 +129,24 @@ function Install-ManualPrograms {
             $installerPath = $installer.FullName
         }
 
-        Write-Host ">> $($program.Ad) kurulumu başlatılıyor (manuel adımları tamamlayın)..." -ForegroundColor Green
         try {
-            Start-Process -FilePath $installerPath
-            Write-Host "   Kurulum penceresi açıldı. Devam etmeden önce sihirbazı tamamlayın." -ForegroundColor Yellow
-            Read-Host "   Kurulum bittiğinde devam etmek için ENTER'a basın"
+            switch ($program.KurulumTipi) {
+                "NoInstaller" {
+                    $desktopFolder = [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)
+                    $desktopPath = Join-Path $desktopFolder $program.Dosya
+                    Write-Host ">> $($program.Ad) masaüstüne kopyalanıyor..." -ForegroundColor Cyan
+                    Copy-Item -Path $installerPath -Destination $desktopPath -Force
+                    Write-Host ">> $($program.Ad) masaüstüne eklendi: $desktopPath" -ForegroundColor Green
+                }
+                default {
+                    Write-Host ">> $($program.Ad) kurulumu başlatılıyor (manuel adımları tamamlayın)..." -ForegroundColor Green
+                    Start-Process -FilePath $installerPath
+                    Write-Host "   Kurulum penceresi açıldı. Devam etmeden önce sihirbazı tamamlayın." -ForegroundColor Yellow
+                    Read-Host "   Kurulum bittiğinde devam etmek için ENTER'a basın"
+                }
+            }
         } catch {
-            Write-Host "HATA: $($program.Ad) kurulumu başlatılamadı: $_" -ForegroundColor Red
+            Write-Host "HATA: $($program.Ad) işlemi tamamlanamadı: $_" -ForegroundColor Red
         }
     }
 }
