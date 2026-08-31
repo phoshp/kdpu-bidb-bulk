@@ -16,16 +16,24 @@ $WingetApps = [ordered]@{
     "Adobe.Acrobat.Reader.64-bit"         = "Adobe Acrobat Reader"
 }
 
-$KamuSMTools = @(
+$ManualPrograms = @(
     @{
-        Ad   = "AkisKart Sürücüsü"
-        Url  = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
-        Zip  = "AkisKart.zip"
+        Ad     = "Dumlupınar Üniversitesi CMX"
+        Url    = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
+        Dosya  = "DUMLUPINARUNICMX.exe"
+        Arsiv  = $false
     },
     @{
-        Ad   = "ACS Unified Reader"
-        Url  = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AcsReader/64bit/Hepsi/ACS-Unified-MSI-Win-4290(ACS38T-WindowsAll).zip"
-        Zip  = "ACSReader.zip"
+        Ad     = "AkisKart Sürücüsü"
+        Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
+        Dosya  = "AkisKart.zip"
+        Arsiv  = $true
+    },
+    @{
+        Ad     = "ACS Unified Reader"
+        Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AcsReader/64bit/Hepsi/ACS-Unified-MSI-Win-4290(ACS38T-WindowsAll).zip"
+        Dosya  = "ACSReader.zip"
+        Arsiv  = $true
     }
 )
 
@@ -83,40 +91,50 @@ function Install-WingetApps {
     }
 }
 
-function Install-KamuSMTools {
+function Install-ManualPrograms {
     if (-not (Test-Path $DownloadFolder)) {
         New-Item -ItemType Directory -Path $DownloadFolder | Out-Null
     }
-    foreach ($tool in $KamuSMTools) {
-        $zipPath = Join-Path $DownloadFolder $tool.Zip
-        $extractPath = Join-Path $DownloadFolder ([System.IO.Path]::GetFileNameWithoutExtension($tool.Zip))
 
-        Write-Host "`n>> $($tool.Ad) indiriliyor..." -ForegroundColor Cyan
+    foreach ($program in $ManualPrograms) {
+        $downloadPath = Join-Path $DownloadFolder $program.Dosya
+
+        Write-Host "`n>> $($program.Ad) indiriliyor..." -ForegroundColor Cyan
         try {
-            Invoke-WebRequest -Uri $tool.Url -OutFile $zipPath -UseBasicParsing
+            Invoke-WebRequest -Uri $program.Url -OutFile $downloadPath -UseBasicParsing
         } catch {
-            Write-Host "HATA: $($tool.Ad) indirilemedi: $_" -ForegroundColor Red
+            Write-Host "HATA: $($program.Ad) indirilemedi: $_" -ForegroundColor Red
             continue
         }
 
-        Write-Host ">> $($tool.Ad) arşivden çıkarılıyor..." -ForegroundColor Cyan
-        try {
-            if (Test-Path $extractPath) { Remove-Item $extractPath -Recurse -Force }
-            Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
-        } catch {
-            Write-Host "HATA: $($tool.Ad) arşivi açılamadı: $_" -ForegroundColor Red
-            continue
+        $installerPath = $downloadPath
+        if ($program.Arsiv) {
+            $extractPath = Join-Path $DownloadFolder ([System.IO.Path]::GetFileNameWithoutExtension($program.Dosya))
+            Write-Host ">> $($program.Ad) arşivden çıkarılıyor..." -ForegroundColor Cyan
+            try {
+                if (Test-Path $extractPath) { Remove-Item $extractPath -Recurse -Force }
+                Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
+            } catch {
+                Write-Host "HATA: $($program.Ad) arşivi açılamadı: $_" -ForegroundColor Red
+                continue
+            }
+
+            $installer = Get-ChildItem -Path $extractPath -Recurse -Include *.exe, *.msi | Select-Object -First 1
+            if (-not $installer) {
+                Write-Host "UYARI: $($program.Ad) içinde çalıştırılabilir kurulum dosyası bulunamadı. Klasörü kontrol edin: $extractPath" -ForegroundColor Yellow
+                Start-Process explorer.exe $extractPath
+                continue
+            }
+            $installerPath = $installer.FullName
         }
 
-        $installer = Get-ChildItem -Path $extractPath -Recurse -Include *.exe, *.msi | Select-Object -First 1
-        if ($installer) {
-            Write-Host ">> $($tool.Ad) kurulumu başlatılıyor (manuel adımları tamamlayın): $($installer.Name)" -ForegroundColor Green
-            Start-Process -FilePath $installer.FullName
+        Write-Host ">> $($program.Ad) kurulumu başlatılıyor (manuel adımları tamamlayın)..." -ForegroundColor Green
+        try {
+            Start-Process -FilePath $installerPath
             Write-Host "   Kurulum penceresi açıldı. Devam etmeden önce sihirbazı tamamlayın." -ForegroundColor Yellow
             Read-Host "   Kurulum bittiğinde devam etmek için ENTER'a basın"
-        } else {
-            Write-Host "UYARI: $($tool.Ad) içinde çalıştırılabilir kurulum dosyası bulunamadı. Klasörü kontrol edin: $extractPath" -ForegroundColor Yellow
-            Start-Process explorer.exe $extractPath
+        } catch {
+            Write-Host "HATA: $($program.Ad) kurulumu başlatılamadı: $_" -ForegroundColor Red
         }
     }
 }
@@ -124,7 +142,7 @@ function Install-KamuSMTools {
 function Invoke-InstallApps {
     Write-Host "`n===== PROGRAMLARI KUR =====" -ForegroundColor Magenta
     Install-WingetApps
-    Install-KamuSMTools
+    Install-ManualPrograms
     Write-Host "`nProgram kurulumu tamamlandı." -ForegroundColor Green
 }
 
