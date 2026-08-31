@@ -18,23 +18,20 @@ $WingetApps = [ordered]@{
 
 $ManualPrograms = @(
     @{
-        Ad          = "Dumlupınar Üniversitesi CMX"
+        Ad          = "DPÜ Alpemix (Uzaktan Erişim)"
         Url         = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
         Dosya       = "DUMLUPINARUNICMX.exe"
-        Arsiv       = $false
-        KurulumTipi = "NoInstaller"
+        Standalone  = $true
     },
     @{
         Ad     = "AkisKart Sürücüsü"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
         Dosya  = "AkisKart.zip"
-        Arsiv  = $true
     },
     @{
         Ad     = "ACS Unified Reader"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AcsReader/64bit/Hepsi/ACS-Unified-MSI-Win-4290(ACS38T-WindowsAll).zip"
         Dosya  = "ACSReader.zip"
-        Arsiv  = $true
     }
 )
 
@@ -79,41 +76,12 @@ function Test-WingetAvailable {
 }
 
 function Install-Winget {
-    if ([Environment]::OSVersion.Version.Build -lt 17763) {
-        Write-Host "HATA: winget için Windows 10 sürüm 1809 veya daha yenisi gerekiyor." -ForegroundColor Red
-        return $false
-    }
-
     Write-Host "winget bulunamadı. Windows Package Manager kuruluyor..." -ForegroundColor Yellow
-    $originalRepositoryPolicy = $null
-
     try {
-        [Net.ServicePointManager]::SecurityProtocol =
-            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-
-        $repository = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
-        if (-not $repository) {
-            Register-PSRepository -Default -ErrorAction Stop
-            $repository = Get-PSRepository -Name PSGallery -ErrorAction Stop
-        }
-
-        $originalRepositoryPolicy = $repository.InstallationPolicy
-        if ($originalRepositoryPolicy -ne "Trusted") {
-            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction Stop
-        }
-
-        Install-PackageProvider -Name NuGet -Force -ForceBootstrap -ErrorAction Stop | Out-Null
-        Install-Module -Name Microsoft.WinGet.Client -Repository PSGallery -Scope AllUsers -Force -AllowClobber -ErrorAction Stop
-        Import-Module Microsoft.WinGet.Client -Force -ErrorAction Stop
-        Repair-WinGetPackageManager -AllUsers -Latest -Force -ErrorAction Stop | Out-Null
+        Install-Module -Name Microsoft.WinGet.Client
     } catch {
         Write-Host "HATA: winget kurulamadı: $_" -ForegroundColor Red
-    } finally {
-        if ($originalRepositoryPolicy -and $originalRepositoryPolicy -ne "Trusted") {
-            Set-PSRepository -Name PSGallery -InstallationPolicy $originalRepositoryPolicy -ErrorAction SilentlyContinue
-        }
     }
-
     if (Test-WingetAvailable) {
         Write-Host "winget başarıyla kuruldu." -ForegroundColor Green
         return $true
@@ -147,43 +115,6 @@ function Install-WingetApps {
     }
 }
 
-function Save-RemoteFile {
-    param(
-        [string]$Url,
-        [string]$Destination
-    )
-
-    $partialPath = "$Destination.download"
-    $originalProgressPreference = $ProgressPreference
-    $ProgressPreference = "SilentlyContinue"
-    [Net.ServicePointManager]::SecurityProtocol =
-        [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-
-    try {
-        Remove-Item -Path $partialPath -Force -ErrorAction SilentlyContinue
-
-        if (Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue) {
-            try {
-                Start-BitsTransfer -Source $Url -Destination $partialPath -Priority Foreground -RetryTimeout 0 -ErrorAction Stop
-            } catch {
-                Write-Host "   BITS kullanılamadı, standart indirme yöntemi deneniyor..." -ForegroundColor Yellow
-                Invoke-WebRequest -Uri $Url -OutFile $partialPath -UseBasicParsing -TimeoutSec 900 -ErrorAction Stop
-            }
-        } else {
-            Invoke-WebRequest -Uri $Url -OutFile $partialPath -UseBasicParsing -TimeoutSec 900 -ErrorAction Stop
-        }
-
-        if (-not (Test-Path $partialPath) -or (Get-Item $partialPath).Length -eq 0) {
-            throw "İndirilen dosya boş veya bulunamadı."
-        }
-
-        Move-Item -Path $partialPath -Destination $Destination -Force
-    } finally {
-        $ProgressPreference = $originalProgressPreference
-        Remove-Item -Path $partialPath -Force -ErrorAction SilentlyContinue
-    }
-}
-
 function Install-ManualPrograms {
     if (-not (Test-Path $DownloadFolder)) {
         New-Item -ItemType Directory -Path $DownloadFolder | Out-Null
@@ -194,14 +125,14 @@ function Install-ManualPrograms {
 
         Write-Host "`n>> $($program.Ad) indiriliyor..." -ForegroundColor Cyan
         try {
-            Save-RemoteFile -Url $program.Url -Destination $downloadPath
+            Invoke-WebRequest -Uri $program.Url -OutFile $downloadPath -UseBasicParsing
         } catch {
             Write-Host "HATA: $($program.Ad) indirilemedi: $_" -ForegroundColor Red
             continue
         }
 
         $installerPath = $downloadPath
-        if ($program.Arsiv) {
+        if ([System.IO.Path]::GetExtension($installerPath) -in ".zip", ".rar", ".7z", ".tar", ".gz") {
             $extractPath = Join-Path $DownloadFolder ([System.IO.Path]::GetFileNameWithoutExtension($program.Dosya))
             Write-Host ">> $($program.Ad) arşivden çıkarılıyor..." -ForegroundColor Cyan
             try {
@@ -221,36 +152,31 @@ function Install-ManualPrograms {
             $installerPath = $installer.FullName
         }
 
-        try {
-            switch ($program.KurulumTipi) {
-                "NoInstaller" {
-                    $desktopFolder = [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)
-                    $desktopPath = Join-Path $desktopFolder $program.Dosya
-                    Write-Host ">> $($program.Ad) masaüstüne kopyalanıyor..." -ForegroundColor Cyan
-                    Copy-Item -Path $installerPath -Destination $desktopPath -Force
-                    Write-Host ">> $($program.Ad) masaüstüne eklendi: $desktopPath" -ForegroundColor Green
-                }
-                default {
-                    Write-Host ">> $($program.Ad) kurulumu başlatılıyor (manuel adımları tamamlayın)..." -ForegroundColor Green
-                    Start-Process -FilePath $installerPath
-                    Write-Host "   Kurulum penceresi açıldı. Devam etmeden önce sihirbazı tamamlayın." -ForegroundColor Yellow
-                    Read-Host "   Kurulum bittiğinde devam etmek için ENTER'a basın"
-                }
-            }
-        } catch {
-            Write-Host "HATA: $($program.Ad) işlemi tamamlanamadı: $_" -ForegroundColor Red
-        }
+        if ($program.Standalone) {
+            $desktopFolder = [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)
+            $desktopPath = Join-Path $desktopFolder $program.Dosya
+            Move-Item -Path $installerPath -Destination $desktopPath -Force
+            Write-Host ">> $($program.Ad) masaüstüne eklendi: $desktopPath" -ForegroundColor Green
+        } else {
+            Write-Host ">> $($program.Ad) kurulumu başlatılıyor..." -ForegroundColor Green
+            Start-Sleep -Seconds 1
+            Start-Process -FilePath $installerPath
+            Read-Host "   Kurulum bittiğinde devam etmek için ENTER'a basın"
+        } 
     }
 }
 
 function Invoke-InstallApps {
+    Clear-Host
     Write-Host "`n===== PROGRAMLARI KUR =====" -ForegroundColor Magenta
     Install-WingetApps
     Install-ManualPrograms
     Write-Host "`nProgram kurulumu tamamlandı." -ForegroundColor Green
+    Start-Sleep -Seconds 0.5
 }
 
 function Invoke-Tweaks {
+    Clear-Host
     Write-Host "`n===== İNCE AYAR =====" -ForegroundColor Magenta
     Write-Host "Masaüstüne 'Bilgisayar' ve 'Denetim Masası' ikonları ekleniyor..." -ForegroundColor Cyan
 
@@ -271,9 +197,11 @@ function Invoke-Tweaks {
     Start-Process explorer.exe
 
     Write-Host "İnce ayar tamamlandı." -ForegroundColor Green
+    Start-Sleep -Seconds 0.5
 }
 
 function Invoke-WinActivation {
+    Clear-Host
     Write-Host "`n===== WINDOWS AKTİFLEŞTİR =====" -ForegroundColor Magenta
 
     $productKey = (Read-Host "Windows ürün anahtarını girin (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX)").Trim().ToUpperInvariant()
@@ -305,10 +233,10 @@ function Invoke-WinActivation {
     }
 
     Write-Host "Aktivasyon işlemi tamamlandı." -ForegroundColor Green
+    Start-Sleep -Seconds 0.5
 }
 
 function Invoke-AllActions {
-    Write-Host "`n===== HEPSİNİ UYGULA =====" -ForegroundColor Magenta
     Invoke-InstallApps
     Invoke-Tweaks
     Invoke-WinActivation
@@ -327,6 +255,11 @@ function Show-Menu {
     Write-Host ""
 }
 
+function Post-Action {
+    [Console]::Beep(500, 800)
+    Read-Host "`nDevam etmek için ENTER'a basın"
+}
+
 function Start-Toolkit {
     Ensure-Admin
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -336,10 +269,10 @@ function Start-Toolkit {
         $secim = Read-Host "Seçimini gir"
 
         switch ($secim) {
-            "1" { Invoke-AllActions; Read-Host "`nDevam etmek için ENTER'a basın" }
-            "2" { Invoke-InstallApps; Read-Host "`nDevam etmek için ENTER'a basın" }
-            "3" { Invoke-Tweaks; Read-Host "`nDevam etmek için ENTER'a basın" }
-            "4" { Invoke-WinActivation; Read-Host "`nDevam etmek için ENTER'a basın" }
+            "1" { Invoke-AllActions; Post-Action }
+            "2" { Invoke-InstallApps; Post-Action }
+            "3" { Invoke-Tweaks; Post-Action }
+            "4" { Invoke-WinActivation; Post-Action }
             "0" { Write-Host "Çıkılıyor..." -ForegroundColor Yellow }
             default { Write-Host "Geçersiz seçim, tekrar deneyin." -ForegroundColor Red; Start-Sleep -Seconds 1 }
         }
