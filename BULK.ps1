@@ -21,7 +21,7 @@ $ManualPrograms = @(
         Ad     = "ACS Unified Reader"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AcsReader/64bit/Hepsi/ACS-Unified-MSI-Win-4290(ACS38T-WindowsAll).zip"
         Dosya  = "ACSReader.zip"
-    }
+    },
     @{
         Ad     = "AkisKart Sürücüsü"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
@@ -32,7 +32,7 @@ $ManualPrograms = @(
         Url         = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
         Dosya       = "DUMLUPINARUNICMX.exe"
         Standalone  = $true
-    },
+    }
 )
 
 $DownloadFolder = "$env:TEMP\KDPU_BIDB_BULK"
