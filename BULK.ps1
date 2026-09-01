@@ -105,7 +105,7 @@ function Install-ManualPrograms {
 
         Write-Host "`n>> $($program.Ad) indiriliyor..." -ForegroundColor Cyan
         try {
-            Start-BitsTransfer -Source "$($program.Url)" -Destination "$downloadPath"
+            curl.exe -L -o "$downloadPath" "$($program.Url)" 
         } catch {
             Write-Host "HATA: $($program.Ad) indirilemedi: $_" -ForegroundColor Red
             continue
