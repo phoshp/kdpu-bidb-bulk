@@ -125,7 +125,7 @@ function Install-ManualPrograms {
                 continue
             }
 
-            if ($program.SetupPath -neq "NONE") {
+            if ($program.SetupPath -ne "NONE") {
                 $installer = Get-Item -Path (Join-Path $extractPath $program.SetupPath)
                 if (-not $installer) {
                     Write-Host "UYARI: $($program.Ad) içinde çalıştırılabilir kurulum dosyası bulunamadı. Klasörü kontrol edin: $extractPath" -ForegroundColor Yellow
