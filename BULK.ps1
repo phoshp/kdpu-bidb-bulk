@@ -35,7 +35,7 @@ $ManualPrograms = @(
     }
 )
 
-$DownloadFolder = "$env:TEMP\KDPU_BIDB_BULK"
+$DownloadFolder = "$env:TEMP\BIDB_BULK"
 
 function Test-WingetAvailable {
     if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
@@ -123,7 +123,7 @@ function Install-ManualPrograms {
                 continue
             }
 
-            $installer = Get-ChildItem -Path $extractPath -Recurse -Include *.exe, *.msi | Select-Object -First 1
+            $installer = Get-ChildItem -Path $extractPath -Filter "setup.exe" -Recurse | Select-Object -First 1
             if (-not $installer) {
                 Write-Host "UYARI: $($program.Ad) içinde çalıştırılabilir kurulum dosyası bulunamadı. Klasörü kontrol edin: $extractPath" -ForegroundColor Yellow
                 Start-Process explorer.exe $extractPath
@@ -224,7 +224,7 @@ function Invoke-AllActions {
 
 function Show-Menu {
     Clear-Host
-    Write-Host "KDPÜ BİDB Windows Bulk Aracı" -ForegroundColor Yellow
+    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.1" -ForegroundColor Yellow
     Write-Host "--------------------------------"
     Write-Host "1.) Hepsini uygula"
     Write-Host "2.) Programları kur"
