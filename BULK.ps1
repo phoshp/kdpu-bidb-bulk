@@ -105,7 +105,7 @@ function Install-ManualPrograms {
 
         Write-Host "`n>> $($program.Ad) indiriliyor..." -ForegroundColor Cyan
         try {
-            Start-BitsTransfer -Source $program.Url -Destination $downloadPath
+            Start-BitsTransfer -Source "$($program.Url)" -Destination "$downloadPath"
         } catch {
             Write-Host "HATA: $($program.Ad) indirilemedi: $_" -ForegroundColor Red
             continue
@@ -224,7 +224,7 @@ function Invoke-AllActions {
 
 function Show-Menu {
     Clear-Host
-    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.2" -ForegroundColor Yellow
+    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.3" -ForegroundColor Yellow
     Write-Host "--------------------------------"
     Write-Host "1.) Hepsini uygula"
     Write-Host "2.) Programları kur"
