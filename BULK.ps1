@@ -27,7 +27,7 @@ $ManualPrograms = @(
         Ad     = "AkisKart Sürücüsü"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
         Dosya  = "AkisKart.zip"
-        SetupPath = "Akia_windows-x64_6_5_4_exe"
+        SetupPath = "Akia_windows-x64_6_5_4.exe"
     },
     @{
         Ad          = "DPÜ Alpemix (Uzaktan Erişim)"
@@ -225,7 +225,7 @@ function Invoke-AllActions {
 
 function Show-Menu {
     Clear-Host
-    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.5" -ForegroundColor Yellow
+    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.6" -ForegroundColor Yellow
     Write-Host "--------------------------------"
     Write-Host "1.) Hepsini uygula"
     Write-Host "2.) Programları kur"
