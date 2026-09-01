@@ -74,13 +74,14 @@ function Install-Winget {
 function Install-WingetApps {
     if (-not (Test-WingetAvailable)) {
         if (-not (Install-Winget)) { return }
+        winget upgrade Microsoft.AppInstaller
     }
 
     foreach ($id in $WingetApps.Keys) {
         $name = $WingetApps[$id]
         Write-Host "`n>> $name kuruluyor ($id)..." -ForegroundColor Cyan
         try {
-            winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements
+            winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements --source winget
         } catch {
             Write-Host "HATA: $name kurulamadı: $_" -ForegroundColor Red
         }
@@ -88,7 +89,7 @@ function Install-WingetApps {
 
     Write-Host "`n>> Java Runtime Environment (32-bit) deneniyor..." -ForegroundColor Cyan
     try {
-        winget install --id Oracle.JavaRuntimeEnvironment -e --architecture x86 --silent --accept-package-agreements --accept-source-agreements
+        winget install --id Oracle.JavaRuntimeEnvironment -e --architecture x86 --silent --accept-package-agreements --accept-source-agreements --source winget
     } catch {
         Write-Host "HATA: Java 32-bit otomatik kurulamadı. Gerekirse manuel indirin: https://www.java.com/download/" -ForegroundColor Red
     }
@@ -137,7 +138,7 @@ function Install-ManualPrograms {
             Move-Item -Path $installerPath -Destination $desktopPath -Force
             Write-Host ">> $($program.Ad) masaüstüne eklendi: $desktopPath" -ForegroundColor Green
         } else {
-            Write-Host ">> $($program.Ad) kurulumu başlatılıyor..." -ForegroundColor Green
+            Write-Host ">> $($installerPath) kurulumu başlatılıyor..." -ForegroundColor Green
             Start-Sleep -Seconds 1
             Start-Process -FilePath $installerPath -Wait
         } 
