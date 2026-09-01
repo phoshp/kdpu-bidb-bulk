@@ -105,7 +105,7 @@ function Install-ManualPrograms {
 
         Write-Host "`n>> $($program.Ad) indiriliyor..." -ForegroundColor Cyan
         try {
-            Invoke-WebRequest -Uri $program.Url -OutFile $downloadPath -UseBasicParsing
+            Start-BitsTransfer -Source $program.Url -Destination $downloadPath
         } catch {
             Write-Host "HATA: $($program.Ad) indirilemedi: $_" -ForegroundColor Red
             continue
