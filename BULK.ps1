@@ -21,17 +21,19 @@ $ManualPrograms = @(
         Ad     = "ACS Unified Reader"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AcsReader/64bit/Hepsi/ACS-Unified-MSI-Win-4290(ACS38T-WindowsAll).zip"
         Dosya  = "ACSReader.zip"
+        SetupPath = "ACS-Unified-MSI-Win-4290\\Setup.exe"
     },
     @{
         Ad     = "AkisKart Sürücüsü"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
         Dosya  = "AkisKart.zip"
+        SetupPath = "Akia_windows-x64_6_5_4_exe"
     },
     @{
         Ad          = "DPÜ Alpemix (Uzaktan Erişim)"
         Url         = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
         Dosya       = "DUMLUPINARUNICMX.exe"
-        Standalone  = $true
+        SetupPath   = "NONE"
     }
 )
 
@@ -123,24 +125,23 @@ function Install-ManualPrograms {
                 continue
             }
 
-            $installer = Get-ChildItem -Path $extractPath -Filter "setup.exe" -Recurse | Select-Object -First 1
-            if (-not $installer) {
-                Write-Host "UYARI: $($program.Ad) içinde çalıştırılabilir kurulum dosyası bulunamadı. Klasörü kontrol edin: $extractPath" -ForegroundColor Yellow
-                Start-Process explorer.exe $extractPath
-                continue
+            if ($program.SetupPath -neq "NONE") {
+                $installer = Get-Item -Path (Join-Path $extractPath $program.SetupPath)
+                if (-not $installer) {
+                    Write-Host "UYARI: $($program.Ad) içinde çalıştırılabilir kurulum dosyası bulunamadı. Klasörü kontrol edin: $extractPath" -ForegroundColor Yellow
+                    Start-Process explorer.exe $extractPath -Wait
+                    continue
+                }
+                $installerPath = $installer.FullName
+                Write-Host ">> $($installerPath) kurulumu başlatılıyor..." -ForegroundColor Green
+                Start-Sleep -Seconds 1
+                Start-Process -FilePath $installerPath -Wait
             }
-            $installerPath = $installer.FullName
-        }
-
-        if ($program.Standalone) {
+        } else {
             $desktopFolder = [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)
             $desktopPath = Join-Path $desktopFolder $program.Dosya
             Move-Item -Path $installerPath -Destination $desktopPath -Force
             Write-Host ">> $($program.Ad) masaüstüne eklendi: $desktopPath" -ForegroundColor Green
-        } else {
-            Write-Host ">> $($installerPath) kurulumu başlatılıyor..." -ForegroundColor Green
-            Start-Sleep -Seconds 1
-            Start-Process -FilePath $installerPath -Wait
         } 
     }
 }
@@ -224,7 +225,7 @@ function Invoke-AllActions {
 
 function Show-Menu {
     Clear-Host
-    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.4" -ForegroundColor Yellow
+    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.5" -ForegroundColor Yellow
     Write-Host "--------------------------------"
     Write-Host "1.) Hepsini uygula"
     Write-Host "2.) Programları kur"
