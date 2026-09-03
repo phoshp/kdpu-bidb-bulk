@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDPÜ BİDB Bulk Aracı</title>
+    <meta name="description" content="Kütahya Dumlupınar Üniversitesi Bilgi İşlem Daire Başkanlığı Windows Format sonrası toplu uygulama kurma/ince ayar CLI aracı.">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .code-block {
+            background-color: #eef1f5;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: Consolas, Monaco, "Courier New", monospace;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-text {
+            color: #000;
+            word-break: break-all;
+        }
+
+        button {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        button:hover {
+            background-color: #f3f4f6;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 12px;
+            color: #777;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+
+        a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>KDPÜ BİDB Bulk Aracı</h1>
+    <p>
+        Kütahya Dumlupınar Üniversitesi Bilgi İşlem Daire Başkanlığı <br>
+        Windows format sonrası toplu uygulama kurma ve ince ayar CLI aracı.
+    </p>
+
+    <div class="code-block">
+        <span class="code-text" id="command-text">irm https://phoshp.github.io/kdpu-bidb-bulk/get | iex</span>
+        <button id="copy-btn" onclick="copyCommand()">Kopyala</button>
+    </div>
+
+    <div class="footer">
+        <p>Gereksinimler: Windows 10 veya üzeri. Powershell yönetici olarak çalıştırılmalıdır.</p>
+        <p><a href="https://github.com/phoshp/kdpu-bidb-bulk">GitHub'da Görüntüle</a></p>
+    </div>
+
+    <script>
+        function copyCommand() {
+            const commandText = document.getElementById('command-text').innerText;
+            navigator.clipboard.writeText(commandText).then(() => {
+                const btn = document.getElementById('copy-btn');
+                btn.innerText = 'Kopyalandı!';
+                setTimeout(() => {
+                    btn.innerText = 'Kopyala';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
