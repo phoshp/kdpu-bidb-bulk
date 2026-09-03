@@ -28,7 +28,7 @@ $ManualPrograms = @(
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
         Dosya  = "AkisKart.zip"
         SetupPath = "Akia_windows-x64_6_5_4.exe"
-    },
+    }
 )
 
 $DownloadFolder = "$env:TEMP\BIDB_BULK"
