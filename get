@@ -1,7 +1,0 @@
-<#
-    This script is a proxy that fetches and executes the latest raw version 
-    of the KDPU BIDB Bulk script directly from the GitHub repository.
-#>
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$rawScriptUrl = "https://raw.githubusercontent.com/phoshp/dpubulk/main/BULK.ps1"
-Invoke-RestMethod -Uri $rawScriptUrl | Invoke-Expression
