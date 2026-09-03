@@ -29,12 +29,6 @@ $ManualPrograms = @(
         Dosya  = "AkisKart.zip"
         SetupPath = "Akia_windows-x64_6_5_4.exe"
     },
-    @{
-        Ad          = "DPÜ Alpemix (Uzaktan Erişim)"
-        Url         = "https://birimler.dpu.edu.tr/app/views/panel/ckfinder/userfiles/2/files/program/DUMLUPINARUNICMX.exe"
-        Dosya       = "DUMLUPINARUNICMX.exe"
-        SetupPath   = "NONE"
-    }
 )
 
 $DownloadFolder = "$env:TEMP\BIDB_BULK"
