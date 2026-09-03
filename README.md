@@ -9,5 +9,5 @@ Oneliner powershell komutu:
 
 
 ```pwsh
-irm "https://raw.githubusercontent.com/phoshp/kdpu-bidb-bulk/main/BULK.ps1" | iex
+irm "https://raw.githubusercontent.com/phoshp/dpubulk/main/BULK.ps1" | iex
 ```
