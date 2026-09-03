@@ -161,23 +161,49 @@ function Invoke-InstallApps {
     Start-Sleep -Seconds 0.5
 }
 
+
+
+$AppAssocXml = @"
+<?xml version="1.0" encoding="UTF-8"?>
+<DefaultAssociations>
+  <!-- Browser Mappings -->
+  <Association Identifier=".htm" ProgId="ChromeHTML" ApplicationName="Google Chrome" />
+  <Association Identifier=".html" ProgId="ChromeHTML" ApplicationName="Google Chrome" />
+  <Association Identifier="http" ProgId="ChromeHTML" ApplicationName="Google Chrome" />
+  <Association Identifier="https" ProgId="ChromeHTML" ApplicationName="Google Chrome" />
+  
+  <!-- PDF Mappings -->
+  <Association Identifier=".pdf" ProgId="Acrobat.Document.DC" ApplicationName="Adobe Acrobat Reader" />
+</DefaultAssociations>
+"@
+
 function Invoke-Tweaks {
     Clear-Host
     Write-Host "`n===== İNCE AYAR =====" -ForegroundColor Magenta
-    Write-Host "Masaüstüne 'Bilgisayar' ve 'Denetim Masası' ikonları ekleniyor..." -ForegroundColor Cyan
+    
+    $TempXmlPath =Join-Path $env:TEMP "AppAssoc.xml"
+    try {
+        Set-Content -Path $TempXmlPath -Value $AppAssocXml -Encoding UTF8
+        Import-Module DISM
+        Dism.exe /Online /Import-DefaultAppAssociations:$TempXmlPath
+        Write-Host "Varsayılan uygulamalar değiştirildi" -ForegroundColor Cyan
+    }
+    catch {
+        Write-Error "HATA: $_"
+    }
 
     $basePath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel"
-
     if (-not (Test-Path $basePath)) {
         New-Item -Path $basePath -Force | Out-Null
     }
-
     # {20D04FE0-3AEA-1069-A2D8-08002B30309D} = Bilgisayar (Bu PC)
     # {5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0} = Denetim Masası
+    # {59031a47-3f72-44a7-89c5-5595fe6b30ee} = Kullanıcı Dosyaları
     New-ItemProperty -Path $basePath -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -PropertyType DWord -Force | Out-Null
     New-ItemProperty -Path $basePath -Name "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}" -Value 0 -PropertyType DWord -Force | Out-Null
+    New-ItemProperty -Path $basePath -Name "{59031a47-3f72-44a7-89c5-5595fe6b30ee}" -Value 0 -PropertyType DWord -Force | Out-Null
+    Write-Host "Masaüstü ikonları eklendi" -ForegroundColor Cyan
 
-    Write-Host "Masaüstü yenileniyor (explorer.exe yeniden başlatılacak)..." -ForegroundColor Cyan
     Stop-Process -ProcessName explorer -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
     Start-Process explorer.exe
@@ -231,7 +257,7 @@ function Invoke-AllActions {
 
 function Show-Menu {
     Clear-Host
-    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.7" -ForegroundColor Yellow
+    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.1.0" -ForegroundColor Yellow
     Write-Host "--------------------------------"
     Write-Host "1.) Hepsini uygula"
     Write-Host "2.) Programları kur"
