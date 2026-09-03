@@ -57,12 +57,24 @@ function Test-WingetAvailable {
 }
 
 function Install-Winget {
-    Write-Host "winget bulunamadı. Windows Package Manager kuruluyor..." -ForegroundColor Yellow
+    Write-Host "winget bulunamadı. GitHub üzerinden Windows Package Manager kuruluyor..." -ForegroundColor Yellow
+    
+    $wingetUrl = "https://github.com/microsoft/winget-cli/releases/download/v1.8.1911/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+    $wingetPath = "$env:TEMP\winget.msixbundle"
+
     try {
-        Install-Module -Name Microsoft.WinGet.Client
+        Write-Host ">> İndiriliyor: WinGet (AppInstaller)..." -ForegroundColor Cyan
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $wingetUrl -OutFile $wingetPath -UseBasicParsing
+        
+        Write-Host ">> Paket yükleniyor..." -ForegroundColor Cyan
+        Add-AppxPackage -Path $wingetPath -ErrorAction Stop
     } catch {
         Write-Host "HATA: winget kurulamadı: $_" -ForegroundColor Red
     }
+
+    if (Test-Path $wingetPath) { Remove-Item $wingetPath -Force -ErrorAction SilentlyContinue }
+
     if (Test-WingetAvailable) {
         Write-Host "winget başarıyla kuruldu." -ForegroundColor Green
         return $true
@@ -225,7 +237,7 @@ function Invoke-AllActions {
 
 function Show-Menu {
     Clear-Host
-    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.6" -ForegroundColor Yellow
+    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.0.7" -ForegroundColor Yellow
     Write-Host "--------------------------------"
     Write-Host "1.) Hepsini uygula"
     Write-Host "2.) Programları kur"
