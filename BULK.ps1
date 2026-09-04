@@ -153,15 +153,12 @@ function Install-ManualPrograms {
 }
 
 function Invoke-InstallApps {
-    Clear-Host
     Write-Host "`n===== PROGRAMLARI KUR =====" -ForegroundColor Magenta
     Install-WingetApps
     Install-ManualPrograms
     Write-Host "`nProgram kurulumu tamamlandi." -ForegroundColor Green
     Start-Sleep -Seconds 0.5
 }
-
-
 
 $AppAssocXml = @"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -178,7 +175,6 @@ $AppAssocXml = @"
 "@
 
 function Invoke-Tweaks {
-    Clear-Host
     Write-Host "`n===== INCE AYAR =====" -ForegroundColor Magenta
     
     $TempXmlPath =Join-Path $env:TEMP "AppAssoc.xml"
@@ -204,16 +200,14 @@ function Invoke-Tweaks {
     New-ItemProperty -Path $basePath -Name "{59031a47-3f72-44a7-89c5-5595fe6b30ee}" -Value 0 -PropertyType DWord -Force | Out-Null
     Write-Host "Masaustu ikonlari eklendi" -ForegroundColor Cyan
 
-    Stop-Process -ProcessName explorer -Force -ErrorAction SilentlyContinue
+    Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
-    Start-Process explorer.exe
 
     Write-Host "Ince ayar tamamlandi." -ForegroundColor Green
     Start-Sleep -Seconds 0.5
 }
 
 function Invoke-WinActivation {
-    Clear-Host
     Write-Host "`n===== WINDOWS AKTIFLESTIR =====" -ForegroundColor Magenta
 
     $productKey = (Read-Host "Windows urun anahtarini girin (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX)").Trim().ToUpperInvariant()
