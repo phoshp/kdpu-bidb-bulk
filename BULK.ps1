@@ -1,8 +1,8 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
-    KDPÜ BİDB BULK Araci
+    KDPU BIDB ONLINE BULK Araci
     -------------------------------
-    Toplu program kurulumu, ince ayar ve Windows aktivasyonu için basit CLI araç.
+    Toplu program kurulumu, ince ayar ve Windows aktivasyonu icin basit CLI arac.
 #>
 
 # ----------
@@ -24,7 +24,7 @@ $ManualPrograms = @(
         SetupPath = "ACS-Unified-MSI-Win-4290\\Setup.exe"
     },
     @{
-        Ad     = "AkisKart Sürücüsü"
+        Ad     = "AkisKart Surucusu"
         Url    = "https://kamusm.bilgem.tubitak.gov.tr/islemler/surucu_yukleme_servisi/suruculer/AkisKart/windows/64/Akia_windows-x64_6_5_4_exe.zip"
         Dosya  = "AkisKart.zip"
         SetupPath = "Akia_windows-x64_6_5_4.exe"
@@ -51,31 +51,31 @@ function Test-WingetAvailable {
 }
 
 function Install-Winget {
-    Write-Host "winget bulunamadı. GitHub üzerinden Windows Package Manager kuruluyor..." -ForegroundColor Yellow
+    Write-Host "winget bulunamadi. GitHub uzerinden Windows Package Manager kuruluyor..." -ForegroundColor Yellow
     
     $wingetUrl = "https://github.com/microsoft/winget-cli/releases/download/v1.8.1911/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
     $wingetPath = "$env:TEMP\winget.msixbundle"
 
     try {
-        Write-Host ">> İndiriliyor: WinGet (AppInstaller)..." -ForegroundColor Cyan
+        Write-Host ">> Indiriliyor: WinGet (AppInstaller)..." -ForegroundColor Cyan
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-WebRequest -Uri $wingetUrl -OutFile $wingetPath -UseBasicParsing
         
-        Write-Host ">> Paket yükleniyor..." -ForegroundColor Cyan
+        Write-Host ">> Paket yukleniyor..." -ForegroundColor Cyan
         Add-AppxPackage -Path $wingetPath -ErrorAction Stop
     } catch {
-        Write-Host "HATA: winget kurulamadı: $_" -ForegroundColor Red
+        Write-Host "HATA: winget kurulamadi: $_" -ForegroundColor Red
     }
 
     if (Test-Path $wingetPath) { Remove-Item $wingetPath -Force -ErrorAction SilentlyContinue }
 
     if (Test-WingetAvailable) {
-        Write-Host "winget başarıyla kuruldu." -ForegroundColor Green
+        Write-Host "winget basariyla kuruldu." -ForegroundColor Green
         return $true
     }
 
-    Write-Host "HATA: winget kurulumdan sonra bulunamadı." -ForegroundColor Red
-    Write-Host "Microsoft Store üzerinden 'App Installer' kurup veya güncelleyip tekrar deneyin." -ForegroundColor Yellow
+    Write-Host "HATA: winget kurulumdan sonra bulunamadi." -ForegroundColor Red
+    Write-Host "Microsoft Store uzerinden 'App Installer' kurup veya guncelleyip tekrar deneyin." -ForegroundColor Yellow
     return $false
 }
 
@@ -91,7 +91,7 @@ function Install-WingetApps {
         try {
             winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements --source winget
         } catch {
-            Write-Host "HATA: $name kurulamadı: $_" -ForegroundColor Red
+            Write-Host "HATA: $name kurulamadi: $_" -ForegroundColor Red
         }
     }
 
@@ -99,7 +99,7 @@ function Install-WingetApps {
     try {
         winget install --id Oracle.JavaRuntimeEnvironment -e --architecture x86 --silent --accept-package-agreements --accept-source-agreements --source winget
     } catch {
-        Write-Host "HATA: Java 32-bit otomatik kurulamadı. Gerekirse manuel indirin: https://www.java.com/download/" -ForegroundColor Red
+        Write-Host "HATA: Java 32-bit otomatik kurulamadi. Gerekirse manuel indirin: https://www.java.com/download/" -ForegroundColor Red
     }
 }
 
@@ -122,24 +122,24 @@ function Install-ManualPrograms {
         $installerPath = $downloadPath
         if ([System.IO.Path]::GetExtension($installerPath) -eq ".zip") {
             $extractPath = Join-Path $DownloadFolder ([System.IO.Path]::GetFileNameWithoutExtension($program.Dosya))
-            Write-Host ">> $($program.Ad) arşivden çıkarılıyor..." -ForegroundColor Cyan
+            Write-Host ">> $($program.Ad) arsivden cikariliyor..." -ForegroundColor Cyan
             try {
                 if (Test-Path $extractPath) { Remove-Item $extractPath -Recurse -Force }
                 Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
             } catch {
-                Write-Host "HATA: $($program.Ad) arşivi açılamadı: $_" -ForegroundColor Red
+                Write-Host "HATA: $($program.Ad) arsivi acilamadi: $_" -ForegroundColor Red
                 continue
             }
 
             if ($program.SetupPath -ne "NONE") {
                 $installer = Get-Item -Path (Join-Path $extractPath $program.SetupPath)
                 if (-not $installer) {
-                    Write-Host "UYARI: $($program.Ad) içinde çalıştırılabilir kurulum dosyası bulunamadı. Klasörü kontrol edin: $extractPath" -ForegroundColor Yellow
+                    Write-Host "UYARI: $($program.Ad) icinde calistirilabilir kurulum dosyasi bulunamadi. Klasoru kontrol edin: $extractPath" -ForegroundColor Yellow
                     Start-Process explorer.exe $extractPath -Wait
                     continue
                 }
                 $installerPath = $installer.FullName
-                Write-Host ">> $($installerPath) kurulumu başlatılıyor..." -ForegroundColor Green
+                Write-Host ">> $($installerPath) kurulumu baslatiliyor..." -ForegroundColor Green
                 Start-Sleep -Seconds 1
                 Start-Process -FilePath $installerPath -Wait
             }
@@ -147,7 +147,7 @@ function Install-ManualPrograms {
             $desktopFolder = [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)
             $desktopPath = Join-Path $desktopFolder $program.Dosya
             Move-Item -Path $installerPath -Destination $desktopPath -Force
-            Write-Host ">> $($program.Ad) masaüstüne eklendi: $desktopPath" -ForegroundColor Green
+            Write-Host ">> $($program.Ad) masaustune eklendi: $desktopPath" -ForegroundColor Green
         } 
     }
 }
@@ -157,7 +157,7 @@ function Invoke-InstallApps {
     Write-Host "`n===== PROGRAMLARI KUR =====" -ForegroundColor Magenta
     Install-WingetApps
     Install-ManualPrograms
-    Write-Host "`nProgram kurulumu tamamlandı." -ForegroundColor Green
+    Write-Host "`nProgram kurulumu tamamlandi." -ForegroundColor Green
     Start-Sleep -Seconds 0.5
 }
 
@@ -179,14 +179,14 @@ $AppAssocXml = @"
 
 function Invoke-Tweaks {
     Clear-Host
-    Write-Host "`n===== İNCE AYAR =====" -ForegroundColor Magenta
+    Write-Host "`n===== INCE AYAR =====" -ForegroundColor Magenta
     
     $TempXmlPath =Join-Path $env:TEMP "AppAssoc.xml"
     try {
         Set-Content -Path $TempXmlPath -Value $AppAssocXml -Encoding UTF8
         Import-Module DISM
         Dism.exe /Online /Import-DefaultAppAssociations:$TempXmlPath
-        Write-Host "Varsayılan uygulamalar değiştirildi" -ForegroundColor Cyan
+        Write-Host "Varsayilan uygulamalar degistirildi" -ForegroundColor Cyan
     }
     catch {
         Write-Error "HATA: $_"
@@ -197,38 +197,38 @@ function Invoke-Tweaks {
         New-Item -Path $basePath -Force | Out-Null
     }
     # {20D04FE0-3AEA-1069-A2D8-08002B30309D} = Bilgisayar (Bu PC)
-    # {5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0} = Denetim Masası
-    # {59031a47-3f72-44a7-89c5-5595fe6b30ee} = Kullanıcı Dosyaları
+    # {5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0} = Denetim Masasi
+    # {59031a47-3f72-44a7-89c5-5595fe6b30ee} = Kullanici Dosyalari
     New-ItemProperty -Path $basePath -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0 -PropertyType DWord -Force | Out-Null
     New-ItemProperty -Path $basePath -Name "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}" -Value 0 -PropertyType DWord -Force | Out-Null
     New-ItemProperty -Path $basePath -Name "{59031a47-3f72-44a7-89c5-5595fe6b30ee}" -Value 0 -PropertyType DWord -Force | Out-Null
-    Write-Host "Masaüstü ikonları eklendi" -ForegroundColor Cyan
+    Write-Host "Masaustu ikonlari eklendi" -ForegroundColor Cyan
 
     Stop-Process -ProcessName explorer -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
     Start-Process explorer.exe
 
-    Write-Host "İnce ayar tamamlandı." -ForegroundColor Green
+    Write-Host "Ince ayar tamamlandi." -ForegroundColor Green
     Start-Sleep -Seconds 0.5
 }
 
 function Invoke-WinActivation {
     Clear-Host
-    Write-Host "`n===== WINDOWS AKTİFLEŞTİR =====" -ForegroundColor Magenta
+    Write-Host "`n===== WINDOWS AKTIFLESTIR =====" -ForegroundColor Magenta
 
-    $productKey = (Read-Host "Windows ürün anahtarını girin (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX)").Trim().ToUpperInvariant()
+    $productKey = (Read-Host "Windows urun anahtarini girin (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX)").Trim().ToUpperInvariant()
 
     if ([string]::IsNullOrWhiteSpace($productKey)) {
-        Write-Host "Aktivasyon iptal edildi: Ürün anahtarı girilmedi." -ForegroundColor Yellow
+        Write-Host "Aktivasyon iptal edildi: Urun anahtari girilmedi." -ForegroundColor Yellow
         return
     }
 
     if ($productKey -notmatch '^[A-Z0-9]{5}(-[A-Z0-9]{5}){4}$') {
-        Write-Host "HATA: Ürün anahtarı XXXXX-XXXXX-XXXXX-XXXXX-XXXXX biçiminde olmalıdır." -ForegroundColor Red
+        Write-Host "HATA: Urun anahtari XXXXX-XXXXX-XXXXX-XXXXX-XXXXX biciminde olmalidir." -ForegroundColor Red
         return
     }
 
-    Write-Host "Lisans anahtarı giriliyor..." -ForegroundColor Cyan
+    Write-Host "Lisans anahtari giriliyor..." -ForegroundColor Cyan
     try {
         cscript.exe //Nologo "$env:windir\System32\slmgr.vbs" /ipk $productKey
     } catch {
@@ -236,15 +236,15 @@ function Invoke-WinActivation {
         return
     }
 
-    Write-Host "Windows aktifleştiriliyor..." -ForegroundColor Cyan
+    Write-Host "Windows aktiflestiriliyor..." -ForegroundColor Cyan
     try {
         cscript.exe //Nologo "$env:windir\System32\slmgr.vbs" /ato
     } catch {
-        Write-Host "HATA: Aktivasyon başarısız: $_" -ForegroundColor Red
+        Write-Host "HATA: Aktivasyon basarisiz: $_" -ForegroundColor Red
         return
     }
 
-    Write-Host "Aktivasyon işlemi tamamlandı." -ForegroundColor Green
+    Write-Host "Aktivasyon islemi tamamlandi." -ForegroundColor Green
     Start-Sleep -Seconds 0.5
 }
 
@@ -252,45 +252,45 @@ function Invoke-AllActions {
     Invoke-InstallApps
     Invoke-Tweaks
     Invoke-WinActivation
-    Write-Host "`nTüm işlemler tamamlandı." -ForegroundColor Green
+    Write-Host "`nTum islemler tamamlandi." -ForegroundColor Green
 }
 
 function Show-Menu {
     Clear-Host
-    Write-Host "KDPÜ BİDB Windows Bulk Aracı v0.1.0" -ForegroundColor Yellow
+    Write-Host "KDPU BIDB ONLINE Windows Bulk Araci v0.1.0" -ForegroundColor Yellow
     Write-Host "--------------------------------"
     Write-Host "1.) Hepsini uygula"
-    Write-Host "2.) Programları kur"
-    Write-Host "3.) İnce Ayar yap"
-    Write-Host "4.) Windows Aktifleştir"
-    Write-Host "0.) Çıkış"
+    Write-Host "2.) Programlari kur"
+    Write-Host "3.) Ince Ayar yap"
+    Write-Host "4.) Windows Aktiflestir"
+    Write-Host "0.) Cikis"
     Write-Host ""
 }
 
 function Post-Action {
     [Console]::Beep(500, 800)
-    Read-Host "`nDevam etmek için ENTER'a basın"
+    Read-Host "`nDevam etmek icin ENTER'a basin"
 }
 
 function Start-Toolkit {
     $currentUser = [Security.Principal.WindowsPrincipal]([Security.Principal.WindowsIdentity]::GetCurrent())
     if (-not $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        Write-Host "HATA: Programı yönetici olarak çalıştırın." -ForegroundColor Red
+        Write-Host "HATA: Programi yonetici olarak calistirin." -ForegroundColor Red
         return
     }
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
     do {
         Show-Menu
-        $secim = Read-Host "Seçimini gir"
+        $secim = Read-Host "Secimini gir"
 
         switch ($secim) {
             "1" { Invoke-AllActions; Post-Action }
             "2" { Invoke-InstallApps; Post-Action }
             "3" { Invoke-Tweaks; Post-Action }
             "4" { Invoke-WinActivation; Post-Action }
-            "0" { Write-Host "Çıkılıyor..." -ForegroundColor Yellow }
-            default { Write-Host "Geçersiz seçim, tekrar deneyin." -ForegroundColor Red; Start-Sleep -Seconds 1 }
+            "0" { Write-Host "Cikiliyor..." -ForegroundColor Yellow }
+            default { Write-Host "Gecersiz secim, tekrar deneyin." -ForegroundColor Red; Start-Sleep -Seconds 1 }
         }
     } while ($secim -ne "0")
 }
